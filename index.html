@@ -1,0 +1,248 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>AI Caption Instagram untuk UMKM</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@400;500;600;700&display=swap" rel="stylesheet">
+  <style>
+    :root {
+      --bg: #0c0f14;
+      --card: #12151c;
+      --input: #1d2028;
+      --accent: #5dd6ff;
+      --accent-strong: #36c1ef;
+      --text: #e9edf7;
+      --muted: #9eb3d5;
+      --border: #242833;
+      --success: #6be6a8;
+      --error: #ff7b7b;
+      --shadow: 0 20px 50px rgba(0, 0, 0, 0.4);
+    }
+
+    * {
+      box-sizing: border-box;
+    }
+
+    body {
+      margin: 0;
+      min-height: 100vh;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      background: radial-gradient(circle at 20% 20%, rgba(93, 214, 255, 0.08), transparent 25%),
+                  radial-gradient(circle at 80% 0%, rgba(107, 230, 168, 0.08), transparent 20%),
+                  linear-gradient(140deg, #0b0f17, #0f1320 45%, #0c0f14);
+      color: var(--text);
+      font-family: "Space Grotesk", "Segoe UI", "Helvetica Neue", Arial, sans-serif;
+      padding: 24px;
+    }
+
+    .card {
+      background: var(--card);
+      border: 1px solid var(--border);
+      border-radius: 18px;
+      box-shadow: var(--shadow);
+      width: 100%;
+      max-width: 920px;
+      padding: 42px 36px;
+      display: grid;
+      gap: 18px;
+      text-align: center;
+    }
+
+    h1 {
+      margin: 0;
+      font-size: 2rem;
+      letter-spacing: 0.4px;
+      color: #f3f7ff;
+    }
+
+    .helper {
+      margin: 0 auto;
+      max-width: 660px;
+      color: var(--muted);
+      line-height: 1.6;
+      font-size: 1rem;
+    }
+
+    form {
+      width: 100%;
+      margin-top: 12px;
+      display: grid;
+      gap: 16px;
+    }
+
+    .prompt-box {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      background: var(--input);
+      border: 1px solid var(--border);
+      border-radius: 999px;
+      padding: 12px 16px 12px 18px;
+      transition: border-color 0.15s ease, box-shadow 0.15s ease;
+      box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.02);
+    }
+
+    .prompt-box:focus-within {
+      border-color: var(--accent);
+      box-shadow: 0 0 0 3px rgba(93, 214, 255, 0.2);
+    }
+
+    .prompt-prefix {
+      color: var(--muted);
+      font-weight: 700;
+      font-size: 1.1rem;
+    }
+
+    input[type="text"] {
+      flex: 1;
+      border: none;
+      background: transparent;
+      color: var(--text);
+      font-size: 1.05rem;
+      outline: none;
+    }
+
+    input::placeholder {
+      color: #6c7385;
+    }
+
+    button {
+      height: 44px;
+      min-width: 120px;
+      justify-self: center;
+      padding: 0 18px;
+      border-radius: 12px;
+      border: none;
+      cursor: pointer;
+      background: linear-gradient(135deg, var(--accent), var(--accent-strong));
+      color: #04101f;
+      font-weight: 700;
+      letter-spacing: 0.2px;
+      transition: transform 0.12s ease, box-shadow 0.12s ease, opacity 0.12s ease;
+      box-shadow: 0 12px 30px rgba(93, 214, 255, 0.25);
+    }
+
+    button:hover:not(:disabled) {
+      transform: translateY(-1px);
+      box-shadow: 0 16px 36px rgba(93, 214, 255, 0.3);
+    }
+
+    button:active:not(:disabled) {
+      transform: translateY(0);
+      box-shadow: 0 10px 24px rgba(93, 214, 255, 0.2);
+    }
+
+    button:disabled {
+      opacity: 0.6;
+      cursor: not-allowed;
+      transform: none;
+      box-shadow: none;
+    }
+
+    textarea {
+      width: 100%;
+      min-height: 200px;
+      padding: 14px;
+      border-radius: 12px;
+      border: 1px solid var(--border);
+      background: rgba(255, 255, 255, 0.02);
+      color: var(--text);
+      resize: vertical;
+      font: inherit;
+      outline: none;
+    }
+
+    textarea:focus {
+      border-color: var(--accent);
+      box-shadow: 0 0 0 3px rgba(93, 214, 255, 0.2);
+    }
+
+    .status {
+      font-size: 0.98rem;
+      color: var(--muted);
+    }
+
+    .status.ok {
+      color: var(--success);
+    }
+
+    .status.error {
+      color: var(--error);
+    }
+  </style>
+</head>
+<body>
+  <main class="card">
+    <h1>Dari mana kita harus mulai?</h1>
+    <p class="helper">Masukkan detail usaha/produk/target/gaya dalam satu prompt, dan AI akan membuatkan caption Instagram untuk UMKM.</p>
+
+    <form id="caption-form">
+      <div class="prompt-box">
+        <span class="prompt-prefix">+</span>
+        <input id="prompt" name="prompt" type="text" placeholder="Tanyakan apa saja" autocomplete="off" required>
+      </div>
+      <button id="submit-btn" type="submit">Generate Caption</button>
+      <span id="status" class="status">Menunggu input...</span>
+      <textarea id="caption" name="caption" placeholder="Caption akan muncul di sini" readonly></textarea>
+    </form>
+  </main>
+
+  <script>
+    // Ambil elemen penting sekali di awal agar mudah digunakan di seluruh script.
+    const form = document.getElementById('caption-form');
+    const statusEl = document.getElementById('status');
+    const captionEl = document.getElementById('caption');
+    const submitBtn = document.getElementById('submit-btn');
+
+    form.addEventListener('submit', async (event) => {
+      event.preventDefault();
+
+      // Ambil prompt tunggal ala GPT.
+      const prompt = form.prompt.value.trim();
+
+      if (!prompt) {
+        statusEl.textContent = 'Isi prompt terlebih dahulu.';
+        statusEl.className = 'status error';
+        return;
+      }
+
+      submitBtn.disabled = true;
+      statusEl.textContent = 'Menghasilkan caption...';
+      statusEl.className = 'status';
+
+      try {
+        const response = await fetch('/api/generate', {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json'
+          },
+          body: JSON.stringify({ prompt })
+        });
+
+        // Jika status bukan 2xx, tampilkan pesan error yang ramah.
+        if (!response.ok) {
+          const errorData = await response.json().catch(() => ({}));
+          throw new Error(errorData.error || 'Gagal memanggil API.');
+        }
+
+        const data = await response.json();
+        captionEl.value = data.caption || 'Tidak ada hasil.';
+        statusEl.textContent = 'Berhasil membuat caption.';
+        statusEl.className = 'status ok';
+      } catch (err) {
+        console.error(err);
+        captionEl.value = '';
+        statusEl.textContent = err.message || 'Terjadi kesalahan.';
+        statusEl.className = 'status error';
+      } finally {
+        submitBtn.disabled = false;
+      }
+    });
+  </script>
+</body>
+</html>
