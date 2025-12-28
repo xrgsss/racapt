@@ -71,7 +71,7 @@ Tambahkan emoji dan hashtag secukupnya.`;
   } catch (error) {
     // Log detail error di server untuk debugging, tapi kirim pesan aman ke client.
     console.error('Error generate caption:', error);
-    const message = error?.message?.includes('Invalid') ? 'Input kurang valid.' : 'Terjadi kesalahan saat membuat caption.';
+    const message = (error?.message || 'Terjadi kesalahan saat membuat caption.').slice(0, 200);
     return res.status(500).json({ error: message });
   }
 };
