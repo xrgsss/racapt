@@ -1,12 +1,5 @@
 // Serverless Function untuk Vercel yang menghasilkan caption Instagram berbasis OpenAI.
-// API key dibaca dari environment variable OPENAI_API_KEY agar tetap aman (tidak pernah dikirim ke frontend).
-const OpenAI = require('openai');
-
-// Inisialisasi client OpenAI sekali di luar handler untuk efisiensi.
-const client = new OpenAI({
-  apiKey: process.env.OPENAI_API_KEY
-});
-
+// Menggunakan fetch bawaan Node 18+ agar bebas dependensi tambahan.
 module.exports = async (req, res) => {
   // Hanya izinkan method POST untuk keamanan dan konsistensi.
   if (req.method !== 'POST') {
@@ -41,19 +34,33 @@ ${prompt}
 Tambahkan emoji dan hashtag secukupnya.`;
 
   try {
-    const completion = await client.chat.completions.create({
-      model: 'gpt-4.1-mini',
-      messages: [
-        {
-          role: 'system',
-          content: 'Anda adalah asisten copywriting kreatif untuk UMKM. Beri caption singkat, menarik, ramah, dan mudah dibaca.'
-        },
-        { role: 'user', content: userPrompt }
-      ],
-      max_tokens: 180,
-      temperature: 0.7
+    // Panggil OpenAI Chat Completions via HTTP agar sederhana dan eksplisit.
+    const response = await fetch('https://api.openai.com/v1/chat/completions', {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        Authorization: `Bearer ${process.env.OPENAI_API_KEY}`
+      },
+      body: JSON.stringify({
+        model: 'gpt-4.1-mini',
+        messages: [
+          {
+            role: 'system',
+            content: 'Anda adalah asisten copywriting kreatif untuk UMKM. Beri caption singkat, menarik, ramah, dan mudah dibaca.'
+          },
+          { role: 'user', content: userPrompt }
+        ],
+        max_tokens: 180,
+        temperature: 0.7
+      })
     });
 
+    if (!response.ok) {
+      const errText = await response.text();
+      throw new Error(`OpenAI API error: ${errText || response.statusText}`);
+    }
+
+    const completion = await response.json();
     const caption = completion.choices?.[0]?.message?.content?.trim();
 
     if (!caption) {
