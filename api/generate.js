@@ -1,5 +1,10 @@
-// Serverless Function untuk Vercel yang menghasilkan caption Instagram berbasis OpenAI.
-// Menggunakan fetch bawaan Node 18+ agar bebas dependensi tambahan.
+// Serverless Function untuk Vercel yang menghasilkan caption Instagram berbasis Gemini (gratis tier tersedia).
+// Menggunakan fetch bawaan Node 18; jika tidak tersedia, fallback ke node-fetch.
+const doFetch =
+  typeof fetch === 'function'
+    ? fetch
+    : (...args) => import('node-fetch').then(({ default: fetchImpl }) => fetchImpl(...args));
+
 module.exports = async (req, res) => {
   // Hanya izinkan method POST untuk keamanan dan konsistensi.
   if (req.method !== 'POST') {
@@ -8,8 +13,8 @@ module.exports = async (req, res) => {
   }
 
   // Pastikan API key tersedia di server.
-  if (!process.env.OPENAI_API_KEY) {
-    return res.status(500).json({ error: 'Server belum dikonfigurasi dengan OpenAI API Key.' });
+  if (!process.env.GEMINI_API_KEY) {
+    return res.status(500).json({ error: 'Server belum dikonfigurasi dengan GEMINI_API_KEY.' });
   }
 
   // Coba baca body request sebagai JSON, termasuk fallback jika body masih berupa string.
@@ -34,34 +39,38 @@ ${prompt}
 Tambahkan emoji dan hashtag secukupnya.`;
 
   try {
-    // Panggil OpenAI Chat Completions via HTTP agar sederhana dan eksplisit.
-    const response = await fetch('https://api.openai.com/v1/chat/completions', {
+    // Panggil Gemini generateContent endpoint.
+    const response = await doFetch('https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent', {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
-        Authorization: `Bearer ${process.env.OPENAI_API_KEY}`
+        'x-goog-api-key': process.env.GEMINI_API_KEY
       },
       body: JSON.stringify({
-        model: 'gpt-4.1-mini',
-        messages: [
+        contents: [
           {
-            role: 'system',
-            content: 'Anda adalah asisten copywriting kreatif untuk UMKM. Beri caption singkat, menarik, ramah, dan mudah dibaca.'
-          },
-          { role: 'user', content: userPrompt }
+            parts: [
+              { text: 'Anda adalah asisten copywriting kreatif untuk UMKM. Beri caption singkat, menarik, ramah, dan mudah dibaca.' },
+              { text: userPrompt }
+            ]
+          }
         ],
-        max_tokens: 180,
-        temperature: 0.7
+        generationConfig: {
+          temperature: 0.7,
+          maxOutputTokens: 180
+        }
       })
     });
 
     if (!response.ok) {
       const errText = await response.text();
-      throw new Error(`OpenAI API error: ${errText || response.statusText}`);
+      throw new Error(`Gemini API error: ${errText || response.statusText}`);
     }
 
     const completion = await response.json();
-    const caption = completion.choices?.[0]?.message?.content?.trim();
+    const caption =
+      completion.candidates?.[0]?.content?.parts?.map((p) => p.text || '').join('').trim() ||
+      completion.candidates?.[0]?.content?.parts?.[0]?.text?.trim();
 
     if (!caption) {
       throw new Error('Caption kosong dari model.');
@@ -74,4 +83,9 @@ Tambahkan emoji dan hashtag secukupnya.`;
     const message = (error?.message || 'Terjadi kesalahan saat membuat caption.').slice(0, 200);
     return res.status(500).json({ error: message });
   }
+};
+
+// Pastikan runtime Node 18+ agar fetch tersedia.
+module.exports.config = {
+  runtime: 'nodejs18.x'
 };
