@@ -39,8 +39,8 @@ ${prompt}
 Tambahkan emoji dan hashtag secukupnya.`;
 
   try {
-    // Panggil Gemini generateContent endpoint.
-    const response = await doFetch('https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent', {
+    // Panggil Gemini generateContent endpoint (v1 + model latest).
+    const response = await doFetch('https://generativelanguage.googleapis.com/v1/models/gemini-1.5-flash-latest:generateContent', {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
